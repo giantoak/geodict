@@ -14,34 +14,36 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, string
+import sys
+import string
+
 
 def print_usage_and_exit(cliargs):
-	print "Usage:"
-	
-	for long, arginfo in cliargs.items():
-		short = arginfo['short']
-		type = arginfo['type']
-		required = (type=='required')
-		optional = (type=='optional')
-		description = arginfo['description']
-		
-		output = '-'+short+'/--'+long+' '
+    print("Usage:")
+    
+    for long, arginfo in cliargs.items():
+        short = arginfo['short']
+        type = arginfo['type']
+        required = (type=='required')
+        optional = (type=='optional')
+        description = arginfo['description']
+        
+        output = '-'+short+'/--'+long+' '
 
-		if optional or required:
-			output += '<value> '
+        if optional or required:
+            output += '<value> '
 
-		output += ': '+description
+        output += ': '+description
 
-		if required:
-			output += ' (required)'
+        if required:
+            output += ' (required)'
 
-		print output
-	
-	exit()
+        print(output)
+    
+    exit()
+
 
 def get_options(cliargs):
-
     options = {'unnamed': [] }
     skip_next = False
     for index in range(1, len(sys.argv)):
@@ -65,11 +67,11 @@ def get_options(cliargs):
         else:
             longname = 'unnamed'
 
-        if longname=='unnamed':
+        if longname == 'unnamed':
             options['unnamed'].append(namepart)
         else:
             if longname not in cliargs:
-                print "Unknown argument '"+longname+"'"
+                print("Unknown argument '{}'".format(longname))
                 print_usage_and_exit(cliargs)
             
             arginfo = cliargs[longname]
@@ -82,25 +84,25 @@ def get_options(cliargs):
                 value = sys.argv[index+1]
                 skip_next = True
             else:
-                print "Missing value after '"+longname+"'"
+                print("Missing value after '{}'".format(longname))
                 print_usage_and_exit(cliargs)
 
             options[longname] = value
 
     for longname, arginfo in cliargs.items():
-        type = arginfo['type']
+        arg_type = arginfo['type']
 
         if longname not in options:
-            if type == 'required':
-                print "Missing required value for '"+longname+"'"
+            if arg_type == 'required':
+                print("Missing required value for '{}'".format(longname))
                 print_usage_and_exit(cliargs)
-            elif type == 'optional':
+            elif arg_type == 'optional':
                 if not 'default' in arginfo:
-                    die('Missing default value for '+longname)
+                    die('Missing default value for {}'.format(longname))
                 options[longname] = arginfo['default']
-            elif type == 'switch':
+            elif arg_type == 'switch':
                 options[longname] = False
             else:
-                die('Unknown type "'+type+'" for '+longname)
+                die('Unknown type "{}" for {}'.format(arg_type, longname))
 
     return options

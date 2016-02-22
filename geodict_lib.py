@@ -26,7 +26,7 @@ def find_locations_in_text(text):
     try:
         cursor = get_database_connection()
     except:
-        print "Database connection failed. Have you set up geodict_config.py with your credentials?"
+        print("Database connection failed. Have you set up geodict_config.py with your credentials?")
         return None
 
     current_index = len(text)-1
@@ -163,22 +163,21 @@ def is_country(cursor, text, text_starting_index, previous_result):
             if last_word not in countries_cache:
                 break
             candidate_dicts = countries_cache[last_word]
-#            select = 'SELECT * FROM countries WHERE last_word=%s;'
-#            values = (pulled_word, )
-##            print "Calling '"+(select % values)+"'"
-#            cursor.execute(select, values)
-#            candidate_rows = cursor.fetchall()
-#            # Nothing ended with this word, so we can skip the rest of the testing
-#            if len(candidate_rows) < 1:
-#                break
+            # select = 'SELECT * FROM countries WHERE last_word=%s;'
+            # values = (pulled_word, )
+            # print "Calling '"+(select % values)+"'"
+            # cursor.execute(select, values)
+            # candidate_rows = cursor.fetchall()
+            # Nothing ended with this word, so we can skip the rest of the testing
+            # if len(candidate_rows) < 1:
+            #    break
             
             name_map = {}
             for candidate_dict in candidate_dicts:
-#                candidate_dict = get_dict_from_row(cursor, candidate_row)
+                # candidate_dict = get_dict_from_row(cursor, candidate_row)
                 name = candidate_dict['country'].lower()
                 name_map[name] = candidate_dict
         else:
-            #
             current_word = pulled_word+' '+current_word
 
         # This happens if we've walked backwards all the way to the start of the string
@@ -233,10 +232,10 @@ def is_country(cursor, text, text_starting_index, previous_result):
     
     return current_result
 
+
 # Looks through our database of 2 million towns and cities around the world to locate any that match the
 # words at the end of the current text fragment
 def is_city(cursor, text, text_starting_index, previous_result):
-    
     # If we're part of a sequence, then use any country or region information to narrow down our search
     country_code = None
     region_code = None
@@ -283,7 +282,7 @@ def is_city(cursor, text, text_starting_index, previous_result):
             else:
                 values = (current_word, country_code, region_code)
 
-#            print "Calling '"+(select % values)+"'"
+            # print("Calling '"+(select % values)+"'")
             cursor.execute(select, values)
             candidate_rows = cursor.fetchall()
             if len(candidate_rows) < 1:
@@ -316,9 +315,7 @@ def is_city(cursor, text, text_starting_index, previous_result):
         return None
     
     if previous_result is None:
-        current_result = {
-            'found_tokens': [],
-        }
+        current_result = { 'found_tokens': [], }
     else:
         current_result = previous_result
                                         
@@ -335,6 +332,7 @@ def is_city(cursor, text, text_starting_index, previous_result):
     })
     
     return current_result
+
 
 # This looks for sub-regions within countries. At the moment the only values in the database are for US states
 def is_region(cursor, text, text_starting_index, previous_result):
@@ -398,9 +396,7 @@ def is_region(cursor, text, text_starting_index, previous_result):
         return None
     
     if previous_result is None:
-        current_result = {
-            'found_tokens': [],
-        }
+        current_result = { 'found_tokens': [], }
     else:
         current_result = previous_result
 
@@ -420,6 +416,7 @@ def is_region(cursor, text, text_starting_index, previous_result):
     
     return current_result
 
+
 # A special case - used to look for 'at' or 'in' before a possible location word. This helps me be more certain
 # that it really is a location in this context. Think 'the New York Times' vs 'in New York' - with the latter
 # fragment we can be pretty sure it's talking about a location
@@ -427,7 +424,7 @@ def is_location_word(cursor, text, text_starting_index, previous_result):
 
     current_index = text_starting_index
     current_word, current_index, end_skipped = pull_word_from_end(text, current_index)
-    word_end_index = (text_starting_index-end_skipped)
+    word_end_index = text_starting_index - end_skipped
     if current_word == '':
         return None
 
@@ -440,11 +437,15 @@ def is_location_word(cursor, text, text_starting_index, previous_result):
 
 # Utility functions
 
-def get_database_connection():
 
-    db=MySQLdb.connect(host=geodict_config.host,user=geodict_config.user,passwd=geodict_config.password,port=geodict_config.port)
-    cursor=db.cursor()
-    cursor.execute('USE '+geodict_config.database+';')
+def get_database_connection():
+    db = MySQLdb.connect(host=geodict_config.host, user=geodict_config.user, passwd=geodict_config.password,
+                         port=geodict_config.port)
+    cursor = db.cursor()
+    try:
+        cursor.execute('USE {};'.format(geodict_config.database))
+    except:
+        pass
 
     return cursor
 
@@ -454,10 +455,10 @@ whitespace = set(string.whitespace+"'\",.-/\n\r<>")
 
 tokenized_words = {}
 
+
 # Walks backwards through the text from the end, pulling out a single unbroken sequence of non-whitespace
 # characters, trimming any whitespace off the end
 def pull_word_from_end(text, index, use_cache=True):
-
     if use_cache and index in tokenized_words:
         return tokenized_words[index]
 
@@ -488,6 +489,7 @@ def pull_word_from_end(text, index, use_cache=True):
 
     return result
 
+
 # Converts the result of a MySQL fetch into an associative dictionary, rather than a numerically indexed list
 def get_dict_from_row(cursor, row):
     d = {}
@@ -497,26 +499,18 @@ def get_dict_from_row(cursor, row):
 
 # Types of locations we'll be looking for
 token_definitions = {
-    'COUNTRY': {
-        'match_function': is_country
-    },
-    'CITY': {
-        'match_function': is_city
-    },
-    'REGION': {
-        'match_function': is_region
-    },
-    'LOCATION_WORD': {
-        'match_function': is_location_word
-    }
+    'COUNTRY': {'match_function': is_country},
+    'CITY': {'match_function': is_city},
+    'REGION': {'match_function': is_region},
+    'LOCATION_WORD': {'match_function': is_location_word}
 }
 
 # Particular sequences of those location words that give us more confidence they're actually describing
 # a place in the text, and aren't coincidental names (eg 'New York Times')
 token_sequences = [
-    [ 'CITY', 'COUNTRY' ],
-    [ 'CITY', 'REGION' ],
-    [ 'REGION', 'COUNTRY' ],
-    [ 'COUNTRY' ],
-    [ 'LOCATION_WORD', 'REGION' ], # Regions are too common as words to use without additional evidence
-];
+    ['CITY', 'COUNTRY'],
+    ['CITY', 'REGION'],
+    ['REGION', 'COUNTRY'],
+    ['COUNTRY'],
+    ['LOCATION_WORD', 'REGION'],  # Regions are too common as words to use without additional evidence
+]

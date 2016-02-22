@@ -16,9 +16,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import csv, os, os.path, MySQLdb, sys, json, csv
-import geodict_lib, cliargs
-import cProfile
+import csv
+import ujson as json
+import sys
+
+import geodict_lib
+import cliargs
 
 args = {
     'input': {
@@ -39,61 +42,61 @@ args = {
         'description': 'The format to use to output information about any locations found. By default it will write out location names separated by newlines, but specifying "json" will give more detailed information',
         'default': 'text'
     }
-};
+}
 
-options = cliargs.get_options(args)
 
-input = options['input']
-output = options['output']
-format = options['format']
+def main():
+    options = cliargs.get_options(args)
 
-if input is '-':
-    input_handle = sys.stdin
-else:
-    try:
-        input_handle = open(input, 'rb')
-    except:
-        die("Couldn't open file '"+input+"'")
-        
-if output is '-':
-    output_handle = sys.stdout
-else:
-    try:
-        output_handle = open(output, 'wb')
-    except:
-        die("Couldn't write to file '"+output+"'")
-        
-text = input_handle.read()
+    if options['input'] is '-':
+        input_handle = sys.stdin
+    else:
+        try:
+            input_handle = open(options['input'], 'rb')
+        except:
+            die("Couldn't open file '{}'".format(options['input']))
 
-#cProfile.run('locations = geodict_lib.find_locations_in_text(text)')
+    if options['output'] is '-':
+        output_handle = sys.stdout
+    else:
+        try:
+            output_handle = open(options['output'], 'wb')
+        except:
+            die("Couldn't write to file '{}'".format(options['output']))
 
-locations = geodict_lib.find_locations_in_text(text)
+    text = input_handle.read()
 
-output_string = ''
-if format.lower() == 'json':
-    output_string = json.dumps(locations)
-    output_handle.write(output_string)
-elif format.lower() == 'text':
-    for location in locations:
-        found_tokens = location['found_tokens']
-        start_index = found_tokens[0]['start_index']
-        end_index = found_tokens[len(found_tokens)-1]['end_index']
-        output_string += text[start_index:(end_index+1)]
-        output_string += "\n"
-    output_handle.write(output_string)
-elif format.lower() == 'csv':
-    writer = csv.writer(output_handle)
-    writer.writerow(['location', 'type', 'lat', 'lon'])
-    for location in locations:
-        found_tokens = location['found_tokens']
-        start_index = found_tokens[0]['start_index']
-        end_index = found_tokens[len(found_tokens)-1]['end_index']
-        name = text[start_index:(end_index+1)]
-        type = found_tokens[0]['type'].lower()
-        lat = found_tokens[0]['lat']
-        lon = found_tokens[0]['lon']
-        writer.writerow([name, type, lat, lon])
-else:
-    print "Unknown output format '"+format+"'"
-    exit()
-    
+    # cProfile.run('locations = geodict_lib.find_locations_in_text(text)')
+
+    locations = geodict_lib.find_locations_in_text(text)
+
+    output_string = ''
+    if options['format'].lower() == 'json':
+        output_string = json.dumps(locations)
+        output_handle.write(output_string)
+    elif format.lower() == 'text':
+        for location in locations:
+            found_tokens = location['found_tokens']
+            start_index = found_tokens[0]['start_index']
+            end_index = found_tokens[len(found_tokens)-1]['end_index']
+            output_string += text[start_index:(end_index+1)]
+            output_string += "\n"
+        output_handle.write(output_string)
+    elif options['format'].lower() == 'csv':
+        writer = csv.writer(output_handle)
+        writer.writerow(['location', 'type', 'lat', 'lon'])
+        for location in locations:
+            found_tokens = location['found_tokens']
+            start_index = found_tokens[0]['start_index']
+            end_index = found_tokens[len(found_tokens)-1]['end_index']
+            writer.writerow([text[start_index:(end_index+1)],
+                             found_tokens[0]['type'].lower(),
+                             found_tokens[0]['lat'],
+                             found_tokens[0]['lon']])
+    else:
+        print("Unknown output format '{}'".format(format))
+        exit()
+
+
+if __name__ == "__main__":
+    main()

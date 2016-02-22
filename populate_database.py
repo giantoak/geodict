@@ -1,13 +1,20 @@
 #!/usr/bin/env python
 
-import csv, os, os.path, MySQLdb
+import csv
+import os
+import MySQLdb
 import geodict_config
 from geodict_lib import *
 
+
 def wipe_and_init_database(cursor):
-    cursor.execute("""DROP DATABASE geodict;""")
+    try:
+        cursor.execute("""DROP DATABASE geodict;""")
+    except:
+        pass
     cursor.execute("""CREATE DATABASE geodict;""")
     cursor.execute("""USE geodict;""")
+
 
 def load_cities(cursor):
     cursor.execute("""CREATE TABLE IF NOT EXISTS cities (
@@ -22,7 +29,7 @@ def load_cities(cursor):
         INDEX(last_word(10)));
     """)
     
-    reader = csv.reader(open(geodict_config.source_folder+'worldcitiespop.csv', 'rb'))
+    reader = csv.reader(open(os.path.join(geodict_config.source_folder, 'worldcitiespop.csv'), 'rb'))
     
     for row in reader:
         try:
@@ -48,6 +55,7 @@ def load_cities(cursor):
             """,
             (city, country, region_code, population, lat, lon, last_word))
 
+
 def load_countries(cursor):
     cursor.execute("""CREATE TABLE IF NOT EXISTS countries (
         country VARCHAR(64),
@@ -59,7 +67,7 @@ def load_countries(cursor):
         INDEX(last_word(10)));
     """)
     
-    reader = csv.reader(open(geodict_config.source_folder+'countrypositions.csv', 'rb'))
+    reader = csv.reader(open(os.path.join(geodict_config.source_folder, 'countrypositions.csv'), 'rb'))
     country_positions = {}
 
     for row in reader:
@@ -72,7 +80,7 @@ def load_countries(cursor):
 
         country_positions[country_code] = { 'lat': lat, 'lon': lon }
         
-    reader = csv.reader(open(geodict_config.source_folder+'countrynames.csv', 'rb'))
+    reader = csv.reader(open(os.path.join(geodict_config.source_folder, 'countrynames.csv'), 'rb'))
 
     for row in reader:
         try:
@@ -111,7 +119,7 @@ def load_regions(cursor):
         INDEX(last_word(10)));
     """)
 
-    reader = csv.reader(open(geodict_config.source_folder+'us_statepositions.csv', 'rb'))
+    reader = csv.reader(open(os.path.join(geodict_config.source_folder, 'us_statepositions.csv'), 'rb'))
     us_state_positions = {}
 
     for row in reader:
@@ -124,7 +132,7 @@ def load_regions(cursor):
 
         us_state_positions[region_code] = { 'lat': lat, 'lon': lon }
     
-    reader = csv.reader(open(geodict_config.source_folder+'us_statenames.csv', 'rb'))
+    reader = csv.reader(open(os.path.join(geodict_config.source_folder, 'us_statenames.csv'), 'rb'))
 
     country_code = 'US'
 
@@ -149,14 +157,18 @@ def load_regions(cursor):
             cursor.execute("""
                 INSERT IGNORE INTO regions (region, region_code, country_code, lat, lon, last_word)
                     values (%s, %s, %s, %s, %s, %s)
-                """,
-                (state_name, region_code, country_code, lat, lon, last_word))
-    
-cursor = get_database_connection()
+                """, (state_name, region_code, country_code, lat, lon, last_word))
 
-wipe_and_init_database(cursor)
 
-load_cities(cursor)
-load_countries(cursor)
-load_regions(cursor)
+def main():
+    cursor = get_database_connection()
 
+    wipe_and_init_database(cursor)
+
+    load_cities(cursor)
+    load_countries(cursor)
+    load_regions(cursor)
+
+
+if __name__ == "__main__":
+    main()
