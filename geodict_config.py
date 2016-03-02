@@ -19,7 +19,7 @@ source_folder = './source_data/'
 
 # Your MySQL user credentials
 user = 'root'
-password = 'root'
+password = 'geodict_root'
 
 # The address and port number of your database server
 host = '127.0.0.1'
