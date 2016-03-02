@@ -19,11 +19,11 @@ source_folder = './source_data/'
 
 # Your MySQL user credentials
 user = 'root'
-password = ''
+password = 'root'
 
 # The address and port number of your database server
-host = 'localhost'
-port = 0
+host = '127.0.0.1'
+port = 3306
 
 # The name of the database to create
 database = 'geodict'
